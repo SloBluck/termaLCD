@@ -1,0 +1,108 @@
+DEFINE OSC 4
+define LCD_DREG PORTC
+DEFINE LCD_DBIT 4
+DEFINE LCD_RSREG PORTC
+DEFINE LCD_RSBIT 0
+DEFINE LCD_EREG PORTC
+DEFINE LCD_EBIT 1
+T VAR WORD
+X VAR WORD
+SEG VAR BYTE
+MINUTO VAR BYTE
+DIV1 VAR BYTE
+HORA VAR BYTE
+X=30
+inicio var portb.0
+inc var portb.1
+dex var portb.2
+FOCO VAR portd.0
+BUZZER VAR portd.1
+T=30
+ciclo:
+    lcdout $FE,2, "TIEMPO:",DEC T,"min"
+    GOSUB TECLAS
+goto ciclo
+TECLAS:
+    IF inicio=1 then goto init
+    IF INC=1 THEN GOSUB INCREMENTO
+    IF DEX=1 THEN GOSUB DECREMENTO
+    RETURN
+INCREMENTO:
+    T=T+10
+    if t=190 then
+    t=0
+    endif
+    PAUSE 500
+    GOSUB ACTUAL
+    RETURN
+DECREMENTO:
+    T=T-10
+    if t=65526 then
+    t=180
+    endif
+    PAUSE 500
+    GOSUB ACTUAL
+    RETURN
+ACTUAL:
+   lcdout $FE,1
+   RETURN
+INIT:
+    X=T
+    T=T*60
+    HORA=0
+    MINUTO=0
+    SEG=0
+    IF T<60 THEN
+        SEG=T
+    ELSE
+        IF T<3600 AND T>=60 THEN
+            MINUTO=T/60
+            SEG=T//60
+        ELSE
+            SEG=T//60
+            DIV1=T/60
+            HORA=DIV1/60
+            MINUTO=DIV1//60
+        ENDIF    
+    ENDIF
+    GOTO INIT2
+INIT2:
+    HIGH FOCO
+    lcdout $FE,1, "PROGRAMADO:",DEC X,"min"
+    LCDOUT $FE,$C1,"QUEDA: ",DEC HORA,":",DEC MINUTO,":",DEC SEG
+    SEG=SEG-1
+    IF SEG=255 THEN
+    SEG=59
+    IF MINUTO=255 THEN
+    HORA=HORA-1
+    MINUTO=59
+    ENDIF
+    IF MINUTO>=0 THEN
+    MINUTO=MINUTO-1
+    ENDIF
+    ENDIF
+    if minuto=255 and seg!=255 then
+    minuto=59
+    hora=hora-1
+    endif
+    IF T=0 THEN
+    lcdout $FE,1
+    LCDOUT $FE,$C1
+    lcdout $FE,1,"PROCESO"
+    LCDOUT $FE,$C1,"FINALIZADO"
+    HIGH BUZZER
+    PAUSE 1000
+    LOW BUZZER
+    LOW FOCO
+    PAUSE 1000
+    HIGH FOCO
+    PAUSE 1000
+    LOW FOCO
+    lcdout $FE,1
+    GOTO CICLO
+    endif
+    t=t-1
+    PAUSE 1000
+    GOTO INIT2
+
+end
